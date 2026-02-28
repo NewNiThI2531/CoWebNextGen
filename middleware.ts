@@ -1,20 +1,47 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import jwt from "jsonwebtoken"
+import { hasPermission } from "@/lib/permissions"
 
 export function middleware(request: NextRequest) {
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+  const { pathname } = request.nextUrl
 
-  if (isAdminRoute) {
-    const token = request.cookies.get('token')
-
-    if (!token) {
-      return NextResponse.redirect(new URL('/admin/login', request.url))
-    }
+  // ไม่ใช่ admin → ผ่าน
+  if (!pathname.startsWith("/admin")) {
+    return NextResponse.next()
   }
 
-  return NextResponse.next()
+  // ✅ อนุญาต login page เสมอ
+  if (pathname.startsWith("/admin/login")) {
+    return NextResponse.next()
+  }
+
+  const token = request.cookies.get("token")?.value
+
+  if (!token) {
+    return NextResponse.redirect(
+      new URL("/admin/login", request.url)
+    )
+  }
+
+  try {
+    const decoded: any = jwt.verify(
+      token,
+      process.env.JWT_SECRET!
+    )
+
+    const role = decoded.role
+
+    // ใส่ RBAC logic ตรงนี้
+
+    return NextResponse.next()
+  } catch {
+    return NextResponse.redirect(
+      new URL("/admin/login", request.url)
+    )
+  }
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ["/admin/:path*"],
 }

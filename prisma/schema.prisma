@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  INTERN
+  CONTRACT
+}
+
+enum Role {
+  MANAGER
+  WEBEDITOR
+  HR
+  SALE
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role
+
+  pages     Page[]
+  careers   Career[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Page {
+  id        String   @id @default(uuid())
+  title     String
+  slug      String   @unique
+  content   String
+  published Boolean  @default(false)
+
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Career {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  department  String?
+  location    String?
+  type        JobType
+  description String
+  isActive    Boolean  @default(true)
+
+  authorId    String?
+  author      User?    @relation(fields: [authorId], references: [id])
+
+  applications JobApplication[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model JobApplication {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  resumeUrl String?
+  message   String?
+
+  careerId  String
+  career    Career   @relation(fields: [careerId], references: [id])
+
+  createdAt DateTime @default(now())
+}
